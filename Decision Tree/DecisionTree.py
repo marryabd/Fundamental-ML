@@ -20,9 +20,12 @@ class DecisionTree:
     self.root = None
   
 
-  def fit(self, X, y):
+  def fit(self, X, y, X_val=None, y_val=None):
     self.n_features = X.shape[1]
     self.root = self._grow_tree(X, y)
+
+    if X_val is not None and y_val is not None:
+      self.root = self._prune_tree(self.root, X_val, y_val)
   
 
   def _grow_tree(self, X, y, depth=0):
@@ -109,6 +112,42 @@ class DecisionTree:
     if x[node.feature] < node.threshold:
       return self._traverse_tree(x, node.left)
     return self._traverse_tree(x, node.right)
+
+
+  def _prune_tree(self, node, X_val, y_val):
+    """Post-prune the tree using a validation set."""
+    if node.is_leaf_node():
+      return node
+
+    # traverse 
+    node.left = self._prune_tree(node.left, X_val, y_val)
+    node.right = self._prune_tree(node.right, X_val, y_val)
+
+    if node.left.is_leaf_node() and node.right.is_leaf_node():
+
+      # split
+      left_idx = np.where(X_val[:, node.feature] < node.threshold)[0]
+      right_idx = np.where(X_val[:, node.feature] >= node.threshold)[0]
+
+      #accuracy before split
+      y_subset = np.concatenate([y_val[left_idx], y_val[right_idx]])
+      leaf_value = self._most_common_label(y_subset)
+      accuracy_before = np.sum(y_subset == leaf_value) / len(y_subset)
+
+      #accuracy after split
+      accuracy_after = np.sum(y_val[left_idx] == node.left.value) / len(y_subset)
+      accuracy_after += np.sum(y_val[right_idx] == node.right.value) / len(y_subset)
+
+      #prune
+      if accuracy_after >= accuracy_before:
+        return Node(value=leaf_value)
+
+    return node
+
+        
+
+
+      
 
 
   
