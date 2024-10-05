@@ -31,6 +31,8 @@ class NaiveBayes:
         for idx, c in enumerate(self._classes):
             posterior = np.log(self._prior[idx])
             posterior += np.sum(np.log(self._pdf(idx, x)))
+            posteriors.append(posterior)
+        return self._classes[np.argmax(posteriors)]
             
     def _pdf(self, idx, x):
         mean_class = self._mean[idx]
